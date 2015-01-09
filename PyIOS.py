@@ -22,7 +22,7 @@ def cexecute(host):
     ssh_newkey = 'Are you sure you want to continue connecting (yes/no)?'
     constr = 'ssh ' + user + '@' + host
     ssh = pexpect.spawn(constr)
-    ret = ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'])
+    ret = ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120))
 
     if ret == 0:
         print ('[-] Error Connecting to ' + host +' May be host is not resolvable or not responding')
