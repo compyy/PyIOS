@@ -20,7 +20,7 @@ import time
 
 # Start of code
 
-host = raw_input("Press Just Enter if you want to collect hosts from host.txt or Enter hostname/IP Manually: ")
+host = raw_input("Enter Hostname/IP or Leave Blank if you want to use hosts.txt: ")
 user = raw_input("Enter Username: ")
 passwd = getpass.getpass("Enter Password: ")
 
@@ -33,7 +33,7 @@ def cexecute(host):
     ret = ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120)
 
     if ret == 0:
-        print ('[-] Error Connecting to ' + host +' May be host is not resolvable or not responding')
+        print ('Error Connecting to ' + host +', May be host is not resolvable or not responding')
         return 0
 
     if ret == 1:
@@ -41,14 +41,14 @@ def cexecute(host):
         ret = ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
         
         if ret == 0:
-            print ('[-] Could not accept new key from ' + host)
+            print ('Could not accept new key from ' + host + ', Try to do manual ssh first')
             return 0
 
     ssh.sendline(passwd)
     auth = ssh.expect(['[P|p]assword:', '>', '#'])
 
     if auth == 0:
-        print (host + ' User password is incorrect')
+        print ('On Host: ' + host + ', The ' +  user + '\'s password provided is incorrect or TACACS is down')
         return 0
         
     if auth == 1:
@@ -69,7 +69,7 @@ def cexecute(host):
 		ssh.sendline(i.strip())
 		ret = ssh.expect([pexpect.TIMEOUT,'#'],timeout=120)
 		if ret==0:
-		   print ("Session Timed out" + host + " Script is Exiting...")
+		   print ("Session Timed out on " + host + " Max Timeout is 120 Seconds, Script is Exiting...")
 		   logf.write(ssh.before)
 		   logf.write("\n")
 		   return 0
@@ -79,7 +79,7 @@ def cexecute(host):
 			logf.write("\n")
 			time.sleep(1)
     
-    print ("CMD executed, on " + host +" script is exiting...")
+    print ("CMD executed, on  " + host +" script is exiting...")
     ssh.close()
             
 
