@@ -61,7 +61,7 @@ def cexecute(host):
             ssh.sendline('terminal length 0')
             for i in cmd:
                 ssh.sendline(i.strip())
-                ssh.expect('#')
+                ssh.expect('#',timeout=180)
                 logf.write(ssh.before)
                 logf.write("\n")
                 #print(ssh.before)
