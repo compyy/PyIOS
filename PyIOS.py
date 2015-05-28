@@ -1,7 +1,15 @@
 #! /usr/bin/python
 
 """
-Check readme for Help
+Author: Yasir Ashfaque
+
+This Script will ask for host manually, if Enter is pressed without entering any value it will take hosts from hosts.txt in same directory.
+
+Username/Password should be provided.(for Security reasons)
+
+Script will load cmd list from cmd.txt in same directory.
+
+By Default Script will open 10 processes parallel, it can be increased but 10 is good.
 
 """
 
@@ -22,7 +30,7 @@ def cexecute(host):
     ssh_newkey = 'Are you sure you want to continue connecting (yes/no)?'
     constr = 'ssh ' + user + '@' + host
     ssh = pexpect.spawn(constr)
-    ret = ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120))
+    ret = ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120)
 
     if ret == 0:
         print ('[-] Error Connecting to ' + host +' May be host is not resolvable or not responding')
@@ -44,7 +52,6 @@ def cexecute(host):
         return 0
         
     if auth == 1:
-        #print('username and password are correct')
         ssh.sendline('enable')
         ssh.expect('[pP]assword:')
         ssh.sendline(passwd)
@@ -53,21 +60,27 @@ def cexecute(host):
         if enable == 0:
             print (host + ' enable password is incorrect')
             return 0
-        
-        if enable == 1:
-            cmd = open("cmd.cfg", "r")
-            logf = open("logs/" +host, "w")
-            
-            ssh.sendline('terminal length 0')
-            for i in cmd:
-                ssh.sendline(i.strip())
-                ssh.expect('#',timeout=180)
-                logf.write(ssh.before)
-                logf.write("\n")
-                #print(ssh.before)
-                time.sleep(1)
-            print ("CMD executed, on " + host +" script is exiting...")
-            ssh.close()
+			
+    cmd = open("cmd.cfg", "r")
+    logf = open("logs/" +host, "w")
+    ssh.sendline('terminal length 0')
+    
+    for i in cmd:
+		ssh.sendline(i.strip())
+		ret = ssh.expect([pexpect.TIMEOUT,'#'],timeout=120)
+		if ret==0:
+		   print ("Session Timed out" + host + " Script is Exiting...")
+		   logf.write(ssh.before)
+		   logf.write("\n")
+		   return 0
+		
+		if ret==1:
+			logf.write(ssh.before)
+			logf.write("\n")
+			time.sleep(1)
+    
+    print ("CMD executed, on " + host +" script is exiting...")
+    ssh.close()
             
 
 ##Function ends here#####
