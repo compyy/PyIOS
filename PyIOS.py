@@ -79,7 +79,7 @@ def cexecute(host):
 			logf.write("\n")
 			time.sleep(1)
     
-    print ("CMD executed, on  " + host +" script is exiting...")
+    print ("CMD executed, on  " + host +" script is exiting..!")
     ssh.close()
             
 
