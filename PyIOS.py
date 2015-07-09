@@ -3,7 +3,6 @@
 Author: Yasir Ashfaque
 Date: 	06/03/2014
 Issues: 
-Password with .
 expect timeout
 """
 #################
