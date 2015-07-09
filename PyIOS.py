@@ -71,6 +71,7 @@ p_help="""By Default Script will open 10 processes parallel, it can be increased
 def openssh(hostname, username, passwd):
 	ssh_newkey = "Are you sure you want to continue connecting (yes/no)?"
 	constr = "ssh " + username + "@" + hostname
+	print ("Login into " + hostname + "....!")
 	ssh = pexpect.spawnu(constr)
 	ret = ssh.expect([pexpect.EOF, ssh_newkey, "[P|p]assword:"],timeout=120)
 	
