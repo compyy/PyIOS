@@ -107,7 +107,7 @@ def openssh(hostname, username, passwd):
 			
     
 def coderun(arguments):
-	args = (arguments.split("."))
+	args = (arguments.split("DEAD_BIT_IDIOT"))
 	hostname = args[0]
 	username = args[1]
 	passwd = args[2]
@@ -115,6 +115,7 @@ def coderun(arguments):
 	ssh = openssh(hostname, username, passwd)
 	
 	if ssh!=0:
+		print ("Executing the Script on " + hostname + "....!")
 		logf = open("logs/" +hostname, "w")
 		if cmd != "cmd-file":
 			ssh.sendline("terminal length 0")
@@ -141,7 +142,16 @@ def wait_for_prompt(ssh, prompt, logf,timeout=1):
 		ssh.expect(prompt, timeout=None)
 		logf.write(ssh.before)
 		gotprompt = ssh.expect([".", pexpect.TIMEOUT], timeout=timeout)
-	
+
+def testrun(arguments):
+	print(arguments)
+	args = (arguments.split("DEAD_BIT_IDIOT"))
+	print (args[0])
+	print (args[1])
+	print (args[2])
+	print (args[3])
+
+
 def main():
 	parser = argparse.ArgumentParser(description=desc,formatter_class=RawTextHelpFormatter)
 	parser.add_argument("username", help=u_help)
@@ -154,13 +164,13 @@ def main():
 	args.passwd = getpass.getpass("Enter Password: ")
 	
 	if type(args.hostname) is str:
-		arguments = ".".join((args.hostname, args.username, args.passwd, args.cmd))
+		arguments = "DEAD_BIT_IDIOT".join((args.hostname, args.username, args.passwd, args.cmd))
 		coderun(arguments)
 	
 	else:
 		arguments=[]
 		for i in range(0,(len(args.hostname))):
-			arguments.append(".".join((args.hostname[i], args.username, args.passwd, args.cmd)))
+			arguments.append("DEAD_BIT_IDIOT".join((args.hostname[i], args.username, args.passwd, args.cmd)))
 		
 		with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
 			executor.map(coderun, arguments)
