@@ -2,9 +2,12 @@
 """
 Author: Yasir Ashfaque
 Date: 	06/03/2014
+Issues: 
+Password with .
+expect timeout
 """
 #################
-from multiprocessing import Pool, freeze_support
+from multiprocessing import Pool
 import pexpect
 import getpass
 import time
@@ -69,7 +72,6 @@ def openssh(hostname, username, passwd):
 	ssh_newkey = "Are you sure you want to continue connecting (yes/no)?"
 	constr = "ssh " + username + "@" + hostname
 	ssh = pexpect.spawnu(constr)
-	en_hostname = hostname + ".*#"
 	ret = ssh.expect([pexpect.EOF, ssh_newkey, "[P|p]assword:"],timeout=120)
 	
 	if ret == 0:
@@ -85,7 +87,7 @@ def openssh(hostname, username, passwd):
 			return 0
 	
 	ssh.sendline(passwd)
-	auth = ssh.expect(["[P|p]assword:", ">", en_hostname])
+	auth = ssh.expect(["[P|p]assword:", ">", "#"])
 	if auth == 0:
 		print ("On Host: " + hostname + ", The  "+  username + "\'s password provided is incorrect or TACACS is down")
 		return 0
@@ -94,7 +96,7 @@ def openssh(hostname, username, passwd):
 		ssh.sendline("enable")
 		ssh.expect("[pP]assword:")
 		ssh.sendline(passwd)
-		enable = ssh.expect(["[P|p]assword:", en_hostname])
+		enable = ssh.expect(["[P|p]assword:", "#"])
 		
 		if enable == 0:
 			print ("For " + hostname + " enable password is incorrect")
@@ -110,47 +112,34 @@ def coderun(arguments):
 	passwd = args[2]
 	cmd = args[3]
 	ssh = openssh(hostname, username, passwd)
-	en_hostname = hostname + ".*#"
 	
 	if ssh!=0:
 		logf = open("logs/" +hostname, "w")
 		if cmd != "cmd-file":
 			ssh.sendline("terminal length 0")
-			ssh.expect(en_hostname,timeout=120)
+			ssh.expect("#",timeout=120)
 			ssh.sendline(cmd)
-			ssh.expect(en_hostname,timeout=120)
-			logf.write(ssh.before)
+			wait_for_prompt(ssh, "#", logf)
 			
 		else:
 			cmd = open("cmd.cfg", "r")
 			ssh.sendline("terminal length 0")
-			ssh.expect([en_hostname],timeout=120)
-
+			ssh.expect("#",timeout=120)
+			
 			for i in cmd:
 				ssh.sendline(i.strip())
-				ret = ssh.expect([pexpect.TIMEOUT,en_hostname],timeout=120)
+				wait_for_prompt(ssh, "#", logf)
 
-				if ret==0:
-					print ("Session Timed out on " + hostname + " Max Timeout is 120 Seconds, Script is Exiting...")
-					logf.write(ssh.before)
-					logf.write("\n")
-					return 0
 				
-				if ret==1:
-					logf.write(ssh.before)
-					logf.write("\n")
-					time.sleep(1)
-		print ("CMD executed, on  " + hostname +" script is exiting..!")
+		print ("Script executed on  " + hostname +"....!")
 		ssh.close()
 
-def testrun(arguments):
-	print (arguments)
-	args = (arguments.split("."))
-	print (args[0])
-	print (args[1])
-	print (args[2])
-	print (args[3])
-
+def wait_for_prompt(ssh, prompt, logf,timeout=1):
+	gotprompt = 0
+	while not gotprompt:
+		ssh.expect(prompt, timeout=None)
+		logf.write(ssh.before)
+		gotprompt = ssh.expect([".", pexpect.TIMEOUT], timeout=timeout)
 	
 def main():
 	parser = argparse.ArgumentParser(description=desc,formatter_class=RawTextHelpFormatter)
@@ -180,5 +169,4 @@ def main():
 
 # Start of code
 if __name__ == "__main__":
-	freeze_support()
 	main()
