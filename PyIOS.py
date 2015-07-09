@@ -69,7 +69,7 @@ def openssh(hostname, username, passwd):
 	ssh_newkey = "Are you sure you want to continue connecting (yes/no)?"
 	constr = "ssh " + username + "@" + hostname
 	ssh = pexpect.spawnu(constr)
-	en_hostname = hostname + "#"
+	en_hostname = hostname + ".*#"
 	ret = ssh.expect([pexpect.EOF, ssh_newkey, "[P|p]assword:"],timeout=120)
 	
 	if ret == 0:
@@ -86,7 +86,6 @@ def openssh(hostname, username, passwd):
 	
 	ssh.sendline(passwd)
 	auth = ssh.expect(["[P|p]assword:", ">", en_hostname])
-	
 	if auth == 0:
 		print ("On Host: " + hostname + ", The  "+  username + "\'s password provided is incorrect or TACACS is down")
 		return 0
@@ -111,7 +110,7 @@ def coderun(arguments):
 	passwd = args[2]
 	cmd = args[3]
 	ssh = openssh(hostname, username, passwd)
-	en_hostname = hostname + "#"
+	en_hostname = hostname + ".*#"
 	
 	if ssh!=0:
 		logf = open("logs/" +hostname, "w")
@@ -126,10 +125,11 @@ def coderun(arguments):
 			cmd = open("cmd.cfg", "r")
 			ssh.sendline("terminal length 0")
 			ssh.expect([en_hostname],timeout=120)
+
 			for i in cmd:
 				ssh.sendline(i.strip())
 				ret = ssh.expect([pexpect.TIMEOUT,en_hostname],timeout=120)
-				
+
 				if ret==0:
 					print ("Session Timed out on " + hostname + " Max Timeout is 120 Seconds, Script is Exiting...")
 					logf.write(ssh.before)
