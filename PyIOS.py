@@ -3,7 +3,7 @@
 Author: Yasir Ashfaque
 Date: 	06/03/2014
 Issues: 
-expect timeout
+1. expect timeout<>
 """
 #################
 
@@ -193,5 +193,5 @@ if __name__ == "__main__":
 		else:
 			main()
 	except ImportError:
-		print(" Error in importing the Module: " "Please make sure libararies are correctly installed")
+		print(" Error in importing the Module: " "Please make sure libraries are correctly installed")
 			
