@@ -6,14 +6,7 @@ Issues:
 expect timeout
 """
 #################
-from multiprocessing import Pool
-import pexpect
-import getpass
-import time
-import argparse
-import sys, os
-from argparse import RawTextHelpFormatter
-import concurrent.futures
+
 #################
 
 ##Doc Strings##
@@ -49,7 +42,7 @@ c3
 """
 
 a_help="""Enables script to load cmdhost.txt file for hosts and specific commands to be applied on the hosts.(Dont use -m with -a and -c)
-The formation of cmdhost.txt should be as described.
+The formation of cmdhost.txt should be as described, otherwise script will run.
 Hostname1:
 c1
 c2
@@ -162,21 +155,43 @@ def main():
 	args = parser.parse_args()
 	args.passwd = getpass.getpass("Enter Password: ")
 	
-	if type(args.hostname) is str:
-		arguments = "DEAD_BIT_IDIOT".join((args.hostname, args.username, args.passwd, args.cmd))
-		coderun(arguments)
+	if args.adv is False:
+		if type(args.hostname) is str:
+			arguments = "DEAD_BIT_IDIOT".join((args.hostname, args.username, args.passwd, args.cmd))
+			coderun(arguments)
 	
-	else:
-		arguments=[]
-		for i in range(0,(len(args.hostname))):
-			arguments.append("DEAD_BIT_IDIOT".join((args.hostname[i], args.username, args.passwd, args.cmd)))
+		else:
+			arguments=[]
+			for i in range(0,(len(args.hostname))):
+				arguments.append("DEAD_BIT_IDIOT".join((args.hostname[i], args.username, args.passwd, args.cmd)))
 		
-		with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
-			executor.map(coderun, arguments)
+			with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
+				executor.map(coderun, arguments)
+	else:
+		print("adv is missing:")
 
 ##Functions end here, start of main code#####
 ##
 
 # Start of code
 if __name__ == "__main__":
-	main()
+	import time
+	print("Checking system requirements....")
+	time.sleep(1)
+	try:
+		from multiprocessing import Pool
+		import pexpect
+		import getpass
+		import argparse
+		import sys, os
+		from argparse import RawTextHelpFormatter
+		import concurrent.futures
+		from pkg_resources import parse_version
+		
+		if ((sys.hexversion < 50594288) or (parse_version(pexpect.__version__) < parse_version("4.0.*"))):
+			print( "Error:  Python version "+str(sys.version_info)+ " or Pexpect version "+ pexpect.__version__+ " does not meet minimum requirements, You must use Python 3.4.1+ and Pexpect 4.0+")
+		else:
+			main()
+	except ImportError:
+		print(" Error in importing the Module: " "Please make sure libararies are correctly installed")
+			
