@@ -5,14 +5,49 @@ Simple SSH script to login to multiple Cisco Hosts and apply multiple commands.
 
 This Script requires to run Linux with SSH client installed.
 
-It is using Python 2.7.8 code with Pexpect library.
+It is using Python 3.4.1 code with Pexpect 4.0 library.
 
 I have created this script for personal use and took the idea from different sources so you are free to use it, in case of any issue, report it.
 
-This Script will ask for host manually, if Enter is pressed without entering any value it will take hosts from hosts.txt in same directory.
+usage: PyIOS.py [-h] [-m HOSTNAME] [-t] [-c CMD] [-a] [-p MAX_PARALLEL]
+                username
 
-Username/Password should be provided.(for Security reasons)
+PyIOS is a custom python script to do ssh/telnet on CISCO routers and perform multiple tasks.
+The Script runs in multiple modes:
+It can run to implement/log the show/config sequential commands on the router.
+It can run in Analyse mode where it needs to collect output of show commands/configurations from routers and apply logic to the data collected and generate desired output.
 
-Script will load cmd list from cmd.txt in same directory.
+It requires Python 3.4+ and Pexpect 4.0+
 
-By Default Script will open 10 processes in parellel, it can be increased but 10 is good.
+positional arguments:
+  username         Define required Username to connect the hosts
+                   
+
+optional arguments:
+  -h, --help       show this help message and exit
+  -m HOSTNAME      Defines host manually, otherwise host names will be taken from hosts.txt in same folder.
+                   The formation of hosts in hosts.txt should be as following:
+                   host1
+                   host2
+                   host3
+                   
+  -t                specify -t for Telnet the hosts, otherwise by default its SSH.
+                   
+  -c CMD           Define the command manually in "" (Double Quote), otherwise it will load multiple lines command from cmd.cfg in same folder.
+                   The formation of commands in cmd.cfg should be as following:
+                   c1
+                   c2
+                   c3
+                   
+  -a               Enables script to load cmdhost.txt file for hosts and specific commands to be applied on the hosts.(Dont use -m with -a and -c)
+                   The formation of cmdhost.txt should be as described, otherwise script will run.
+                   Hostname1:
+                   c1
+                   c2
+                   c3
+                   Hostname2:
+                   c1
+                   c2
+                   c3
+                   
+  -p MAX_PARALLEL  By Default Script will open 10 processes parallel, it can be increased to desired value by using this switch.
