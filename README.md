@@ -1,7 +1,9 @@
 PyIOS
 =====
-Simple SSH script to login to multiple Cisco Hosts and apply multiple commands.
-This Script requires to run Linux with SSH client installed.
+A Python script to do ssh to multiple Cisco Hosts and perform multiple operations with multiprocessing capablities, means you can do multiple tasks on multiple routers at same time.
+
+This Script must be run on Linux with SSH client installed.
+
 It is using Python 3.4.1 code with Pexpect 4.0 library.
 
 I have created this script for personal use and took the idea from different sources so you are free to use it, in case of any issue, report it.
@@ -9,7 +11,6 @@ I have created this script for personal use and took the idea from different sou
 
 Usage: PyIOS.py username [-h] [-m HOSTNAME] [-t] [-c CMD] [-a] [-p MAX_PARALLEL]
 
-PyIOS is a custom python script to do ssh/telnet on CISCO routers and perform multiple tasks.
 
 The Script runs in multiple modes:
 It can run to implement/log the show/config sequential commands on the router.
