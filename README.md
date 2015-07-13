@@ -34,7 +34,7 @@ Optional arguments:
 	-t				Specify -t for Telnet the hosts, otherwise by default its SSH.<Not Functional Yet>
                    
   
-	-c CMD			Define the command manually in "" (Double Quote), otherwise it will load multiple lines command
+	-c CMD			Defines the command manually in "" (Double Quote), otherwise it will load multiple lines command
                     from cmd.cfg in same folder.
 					The formation of commands in cmd.cfg should be as following:
 					c1
