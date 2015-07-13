@@ -33,7 +33,7 @@ host3
 t_help=""" specify -t for Telnet the hosts, otherwise by default its SSH.
 	"""
 
-c_help="""Define the command manually in "" (Double Quote), otherwise it will load multiple lines command from cmd.cfg in same folder.
+c_help="""Defines the command manually in "" (Double Quote), otherwise it will load multiple lines command from cmd.cfg in same folder.
 The formation of commands in cmd.cfg should be as following:
 c1
 c2
