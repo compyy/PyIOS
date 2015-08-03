@@ -2,8 +2,6 @@
 """
 Author: Yasir Ashfaque
 Date: 	06/03/2014
-Issues: 
-1. expect timeout<>
 """
 #################
 
@@ -168,7 +166,7 @@ def main():
 			with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
 				executor.map(coderun, arguments)
 	else:
-		print("adv is missing:")
+		print("This code is under development")
 
 ##Functions end here, start of main code#####
 ##
@@ -194,3 +192,4 @@ if __name__ == "__main__":
 			main()
 	except ImportError:
 		print(" Error in importing the Module: " "Please make sure libraries are correctly installed")
+			
