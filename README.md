@@ -42,15 +42,4 @@ Optional arguments:
 					c3
                    
   
-	-a				Enables script to load cmdhost.txt file for hosts and specific commands to be applied on the                          hosts.(Dont use -m with -a and -c)
-					The formation of cmdhost.txt should be as described, otherwise script will run.
-					Hostname1:
-					c1
-					c2
-					c3
-					Hostname2:
-					c1
-					c2
-					c3
-	
 	-p MAX_PARALLEL By Default Script will open 10 processes parallel, it can be increased to desired value by using this switch.
