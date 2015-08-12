@@ -51,8 +51,6 @@ p_help='''By Default Script will open 10 processes parallel, it can be increased
 class pssh:
 	'This is SSH class which opens ssh session to routers/switches and execute specific function'
 	
-	status = 0 #Provides the status of the object if it is open to closed
-	
 	def __init__(self, hostname, username, password, cmd):
 		self.hostname = hostname
 		self.username = username
@@ -71,10 +69,11 @@ class pssh:
 		
 	def open_ssh(self):
 		ssh_newkey = 'Are you sure you want to continue connecting (yes/no)?'
+		ssh_addkey = 'Warning: Permanently added the RSA host key for IP address'
 		session = 'ssh ' + self.username + '@' + self.hostname
+		self.ssh = pexpect.spawnu(session)
 		self.displayStart()
 		time.sleep(1)
-		self.ssh = pexpect.spawnu(session)
 		ret = self.ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120)
 	
 		if ret == 0:
@@ -83,38 +82,39 @@ class pssh:
 	
 		if ret == 1:
 			self.ssh.sendline('yes')
-			ret = ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
+			ret_key = ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
 		
-			if ret == 0:
+			if ret_key == 0:
 				print ('Could not accept new key from ', self.hostname, ', Try to do manual ssh first or remove the old key with ssh-keygen')
 				return 0
-	
-		self.ssh.sendline(self.password)
-		auth = self.ssh.expect(['[P|p]assword:', '>', '#'])
-		if auth == 0:
-			print ('On Host: ', self.hostname, ', The  ',self.username, '\'s password provided is incorrect or TACACS is down')
-			return 0
+			
+			if ret_key == 1:
+				ret = 2
 		
-		if auth == 1:
-			self.ssh.sendline('enable')
-			self.ssh.expect('[pP]assword:')
+		if ret == 2:
 			self.ssh.sendline(self.password)
-			enable = self.ssh.expect(['[P|p]assword:', '#'])
-		
-			if enable == 0:
-				print ('For ', self.hostname, ' enable password is incorrect')
+			auth = self.ssh.expect(['[P|p]assword:', '>', '#'])
+			if auth == 0:
+				print ('On Host: ', self.hostname, ', The  ',self.username, '\'s password provided is incorrect or TACACS is down')
 				return 0
 		
-		self.status = 1
+			elif auth == 1:
+				self.ssh.sendline('enable')
+				self.ssh.expect('[pP]assword:')
+				self.ssh.sendline(self.password)
+				enable = self.ssh.expect(['[P|p]assword:', '#'])
+		
+				if enable == 0:
+					print ('For Host:', self.hostname, ', Enable password is incorrect')
+					return 0
+		else:
+			print('Expect value == ', ret, 'is not documented, ', self.hostname, 'is exiting')
+			print(self.ssh.before)
 	
 	def close_ssh(self):
-		if self.status == 0:
-			print ('Object is already closed or not initiazlied')
-	
-		else:
-			self.displayEnd()
-			self.status = 0
-			self.ssh.close()
+		self.displayEnd()
+		self.status = 0
+		self.ssh.close()
 
 
 def run_basic(object):
@@ -147,6 +147,13 @@ def wait_for_prompt_log(ssh, prompt,logf, timeout=1):
 		logf.write((ssh.before + '\n'))
 		#print(ssh.before)
 		gotprompt = ssh.expect(['.', pexpect.TIMEOUT], timeout=timeout)
+
+def wait_for_prompt(ssh, prompt,timeout=1):
+	gotprompt = 0
+	while not gotprompt:
+		ssh.expect(prompt, timeout=None)
+		gotprompt = ssh.expect(['.', pexpect.TIMEOUT], timeout=timeout)
+
 
 def main():
 	parser = argparse.ArgumentParser(description=desc,formatter_class=RawTextHelpFormatter)
