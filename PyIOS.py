@@ -33,6 +33,14 @@ t_help='''Specify -t for Telnet the hosts, otherwise by default its SSH.(Under c
 
 '''
 
+child_help='''Specify -child with string to find config for specific child.
+
+'''
+
+f_help='''Specify -f and then specify the configurations you want to check.
+
+'''
+
 c_help='''Defines the command manually in '' (Double Quote), otherwise it will load multiple lines command from cmd.cfg in same folder.
 The formation of commands in cmd.cfg should be as following:
 c1
@@ -60,7 +68,6 @@ class pssh:
 	def displayStart(self):
 		print ('Script is trying to login in to the ', self.hostname, '....!')
 
-	
 	def displayProgress(self):
 		print ('Command is being executed on ', self.hostname, '....!')
 	
@@ -140,6 +147,22 @@ def run_basic(object):
 		logf.close()
 		object.close_ssh()
 
+def find_config(object,child):
+	if (object.open_ssh()) != 0:
+		object.displayProgress()
+		logf = open('logs/' + object.hostname + '.cfg', 'w')
+		object.ssh.sendline('terminal length 0')
+		object.ssh.expect('#',timeout=120)
+		object.ssh.sendline('show run')
+		wait_for_prompt_log(object.ssh, '#', logf)
+		logf.close()
+		parse = CiscoConfParse('logs/' + object.hostname + '.cfg', syntax='ios')
+		for obj in parse.find_objects(child):
+			for i in obj.geneology_text:
+				print (i)
+		
+		object.close_ssh()
+
 def wait_for_prompt_log(ssh, prompt,logf, timeout=1):
 	gotprompt = 0
 	while not gotprompt:
@@ -162,10 +185,16 @@ def main():
 	parser.add_argument('-t', dest='telnet', default=False, action='store_true', help=t_help)
 	parser.add_argument('-c', dest='cmd', default='cmd-file', help=c_help)
 	parser.add_argument('-p', dest='max_parallel', default=10, type=int, help=p_help)
+	parser.add_argument('-f', dest='flag_find', default=False, action='store_true', help=f_help)
+	parser.add_argument('-child', dest='child', default='none', help=child_help)
 	args = parser.parse_args()
 	args.password = getpass.getpass('Enter Password: ')
+
+	if args.flag_find is True:
+		session_config = pssh(args.hostname,args.username,args.password,args.cmd)
+		find_config(session_config,args.child)
 	
-	if type(args.hostname) is str:
+	elif type(args.hostname) is str:
 		session_basic = pssh(args.hostname,args.username,args.password,args.cmd)
 		run_basic(session_basic)
 			
@@ -193,10 +222,11 @@ if __name__ == '__main__':
 		from argparse import RawTextHelpFormatter
 		import concurrent.futures
 		from pkg_resources import parse_version
+		from ciscoconfparse import CiscoConfParse
 		
 		if ((sys.hexversion < 50594288) or (parse_version(pexpect.__version__) < parse_version('4.0.*'))):
 			print( 'Error:  Python version '+str(sys.version_info)+ ' or Pexpect version '+ pexpect.__version__+ ' does not meet minimum requirements, You must use Python 3.4.1+ and Pexpect 4.0+')
 		else:
 			main()
 	except ImportError:
-		print(' Error in importing the Module: ' 'Please make sure the required libraries (pexpect,getpass,argparse,concurrent.futures) are correctly installed')
+		print(' Error in importing the Module: ' 'Please make sure the required libraries (pexpect,getpass,argparse,ciscoconfparse, concurrent.futures) are correctly installed')
