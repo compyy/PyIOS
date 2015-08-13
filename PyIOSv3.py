@@ -59,11 +59,12 @@ p_help='''By Default Script will open 10 processes parallel, it can be increased
 class pssh:
 	'This is SSH class which opens ssh session to routers/switches and execute specific function'
 	
-	def __init__(self, hostname, username, password, cmd):
+	def __init__(self, hostname, username, password, cmd,child):
 		self.hostname = hostname
 		self.username = username
 		self.password = password
 		self.cmd = cmd
+		self.child = child
 		
 	def displayStart(self):
 		print ('Script is trying to login in to the ', self.hostname, '....!')
@@ -147,7 +148,7 @@ def run_basic(object):
 		logf.close()
 		object.close_ssh()
 
-def find_config(object,child):
+def find_config(object):
 	if (object.open_ssh()) != 0:
 		object.displayProgress()
 		logf = open('temp/' + object.hostname + '.cfg', 'w')
@@ -158,7 +159,7 @@ def find_config(object,child):
 		logf.close()
 		parse = CiscoConfParse('temp/' + object.hostname + '.cfg', syntax='ios')
 		outf = open('logs/' + object.hostname, 'w')
-		for obj in parse.find_objects(child):
+		for obj in parse.find_objects(object.child):
 			for i in obj.geneology_text:
 				outf.write((i +'\n'))
 		
@@ -192,20 +193,22 @@ def main():
 	args = parser.parse_args()
 	args.password = getpass.getpass('Enter Password: ')
 
-	if args.flag_find is True:
-		session_config = pssh(args.hostname,args.username,args.password,args.cmd)
-		find_config(session_config,args.child)
-	
-	elif type(args.hostname) is str:
-		session_basic = pssh(args.hostname,args.username,args.password,args.cmd)
-		run_basic(session_basic)
+	if type(args.hostname) is str:
+		session_basic = pssh(args.hostname,args.username,args.password,args.cmd,args.child)
+		if args.flag_find is True:
+			find_config(session_basic)
+		else:
+			run_basic(session_basic)
 			
 	else:
 		session = list()
 		for i in args.hostname:
-			session.append(pssh(i,args.username, args.password,args.cmd))
+			session.append(pssh(i,args.username, args.password,args.cmd,args.child))
 		with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
-			executor.map(run_basic, session)
+			if args.flag_find is True:
+				executor.map(find_config, session)
+			else:
+				executor.map(run_basic, session)
 
 
 ##Functions end here, start of main code#####
