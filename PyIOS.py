@@ -153,7 +153,7 @@ def find_config(object,child):
 		logf = open('logs/' + object.hostname + '.cfg', 'w')
 		object.ssh.sendline('terminal length 0')
 		object.ssh.expect('#',timeout=120)
-		object.ssh.sendline('show run')
+		object.ssh.sendline(object.cmd)
 		wait_for_prompt_log(object.ssh, '#', logf)
 		logf.close()
 		parse = CiscoConfParse('logs/' + object.hostname + '.cfg', syntax='ios')
