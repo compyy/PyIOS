@@ -150,25 +150,27 @@ def run_basic(object):
 def find_config(object,child):
 	if (object.open_ssh()) != 0:
 		object.displayProgress()
-		logf = open('logs/' + object.hostname + '.cfg', 'w')
+		logf = open('temp/' + object.hostname + '.cfg', 'w')
 		object.ssh.sendline('terminal length 0')
 		object.ssh.expect('#',timeout=120)
 		object.ssh.sendline(object.cmd)
 		wait_for_prompt_log(object.ssh, '#', logf)
 		logf.close()
-		parse = CiscoConfParse('logs/' + object.hostname + '.cfg', syntax='ios')
+		parse = CiscoConfParse('temp/' + object.hostname + '.cfg', syntax='ios')
+		outf = open('logs/' + object.hostname, 'w')
 		for obj in parse.find_objects(child):
 			for i in obj.geneology_text:
-				print (i)
+				outf.write((i +'\n'))
 		
 		object.close_ssh()
+		os.remove('temp/' + object.hostname + '.cfg')
+		outf.close()
 
 def wait_for_prompt_log(ssh, prompt,logf, timeout=1):
 	gotprompt = 0
 	while not gotprompt:
 		ssh.expect(prompt, timeout=None)
 		logf.write((ssh.before + '\n'))
-		#print(ssh.before)
 		gotprompt = ssh.expect(['.', pexpect.TIMEOUT], timeout=timeout)
 
 def wait_for_prompt(ssh, prompt,timeout=1):
