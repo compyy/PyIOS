@@ -49,6 +49,11 @@ c3
 
 '''
 
+a_help="""Enables script to load hostnames from filenames in folder hosts in same directory, and applies the cmd provided in those files. (Dont use -m, -c with -a)
+
+
+"""
+
 p_help='''By Default Script will open 10 processes parallel, it can be increased to desired value by using this switch.
 
 '''
@@ -121,28 +126,36 @@ class pssh:
 		self.ssh.close()
 
 
-def run_basic(object):
+def run_cmd(object):
 	if (object.open_ssh()) != 0:
 		object.displayProgress()
 		logf = open('logs/' + object.hostname, 'w')
-		if object.cmd != 'cmd-file':
+		
+		if object.cmd !='advance' and object.cmd !='cmd-file':
 			object.ssh.sendline('terminal length 0')
 			object.ssh.expect('#',timeout=120)
 			object.ssh.sendline(object.cmd)
 			wait_for_prompt_log(object.ssh, '#', logf)
 		
 		else:
-			cmd = open('cmd.cfg', 'r')
+			if object.cmd == 'advance':
+				cmd = open('hosts/' + object.hostname)
+			else:
+				cmd = open('cmd.cfg', 'r')
+				
 			object.ssh.sendline('terminal length 0')
 			object.ssh.expect('#',timeout=120)
-	
 			for i in cmd:
 				object.ssh.sendline(i.strip())
 				wait_for_prompt_log(object.ssh, '#', logf)
-			
-	
+				
 		logf.close()
 		object.close_ssh()
+	
+	else:
+		print('Script could not open SSH session to host: ', object.hostname)
+		
+	
 
 def find_config(object):
 	if (object.open_ssh()) != 0:
@@ -162,6 +175,9 @@ def find_config(object):
 		object.close_ssh()
 		os.remove('temp/' + object.hostname + '.cfg')
 		outf.close()
+	
+	else:
+		print('Script could not open SSH session to host: ', object.hostname)
 
 def wait_for_prompt_log(ssh, prompt,logf, timeout=1):
 	gotprompt = 0
@@ -186,26 +202,37 @@ def main():
 	parser.add_argument('-p', dest='max_parallel', default=10, type=int, help=p_help)
 	parser.add_argument('-f', dest='flag_find', default=False, action='store_true', help=f_help)
 	parser.add_argument('-child', dest='child', default='none', help=child_help)
+	parser.add_argument("-a", dest="adv", default=False, action='store_true', help=a_help)
+
 	args = parser.parse_args()
 	args.password = getpass.getpass('Enter Password: ')
 
-	if type(args.hostname) is str:
-		session_basic = pssh(args.hostname,args.username,args.password,args.cmd,args.child)
-		if args.flag_find is True:
-			find_config(session_basic)
-		else:
-			run_basic(session_basic)
+	if args.adv is False:
+		if type(args.hostname) is str:
+			session_basic = pssh(args.hostname,args.username,args.password,args.cmd,args.child)
+			if args.flag_find is True:
+				find_config(session_basic)
+			else:
+				run_cmd(session_basic)
 			
+		else:
+			session = list()
+			for i in args.hostname:
+				session.append(pssh(i,args.username, args.password,args.cmd,args.child))
+			with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
+				if args.flag_find is True:
+					executor.map(find_config, session)
+				else:
+					executor.map(run_cmd, session)
+	
 	else:
 		session = list()
-		for i in args.hostname:
+		args.cmd= 'advance'
+		for i in os.listdir('hosts/'):
 			session.append(pssh(i,args.username, args.password,args.cmd,args.child))
+		
 		with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
-			if args.flag_find is True:
-				executor.map(find_config, session)
-			else:
-				executor.map(run_basic, session)
-
+			executor.map(run_cmd, session)
 
 ##Functions end here, start of main code#####
 ##
