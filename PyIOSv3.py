@@ -77,7 +77,6 @@ class pssh:
 		
 	def open_ssh(self):
 		ssh_newkey = 'Are you sure you want to continue connecting (yes/no)?'
-		ssh_addkey = 'Warning: Permanently added the RSA host key for IP address'
 		session = 'ssh ' + self.username + '@' + self.hostname
 		self.ssh = pexpect.spawnu(session)
 		self.displayStart()
@@ -90,7 +89,7 @@ class pssh:
 	
 		if ret == 1:
 			self.ssh.sendline('yes')
-			ret_key = ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
+			ret_key = self.ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
 		
 			if ret_key == 0:
 				print ('Could not accept new key from ', self.hostname, ', Try to do manual ssh first or remove the old key with ssh-keygen')
@@ -115,9 +114,6 @@ class pssh:
 				if enable == 0:
 					print ('For Host:', self.hostname, ', Enable password is incorrect')
 					return 0
-		else:
-			print('Expect value == ', ret, 'is not documented, ', self.hostname, 'is exiting')
-			print(self.ssh.before)
 	
 	def close_ssh(self):
 		self.displayEnd()
@@ -180,7 +176,7 @@ def wait_for_prompt(ssh, prompt,timeout=1):
 		ssh.expect(prompt, timeout=None)
 		gotprompt = ssh.expect(['.', pexpect.TIMEOUT], timeout=timeout)
 
-
+###### start of main() #######
 def main():
 	parser = argparse.ArgumentParser(description=desc,formatter_class=RawTextHelpFormatter)
 	parser.add_argument('username', help=u_help)
@@ -214,7 +210,8 @@ def main():
 ##Functions end here, start of main code#####
 ##
 
-# Start of code
+## main executes from here, we will verify all the packages have been correctly installed and imported correctly ##
+
 if __name__ == '__main__':
 	import time
 	print('Checking system requirements....')
