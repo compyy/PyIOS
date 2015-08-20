@@ -1,4 +1,5 @@
-#! /usr/bin/python3.4
+#!/usr/bin/env python3.4
+
 '''
 Author: Yasir Ashfaque
 Date: 	06/03/2014
@@ -41,6 +42,12 @@ f_help='''Specify -f and then specify the configurations you want to check.
 
 '''
 
+if_help='''Specify -if and follow by string, to verify if this feature/keyword has been enabled and what is the top parent.
+
+'''
+offline_help='''Specify -offline, if config file is already in logs/ folder and we just want to analyze specific config there.
+
+'''
 c_help='''Defines the command manually in '' (Double Quote), otherwise it will load multiple lines command from cmd.cfg in same folder.
 The formation of commands in cmd.cfg should be as following:
 c1
@@ -49,7 +56,8 @@ c3
 
 '''
 
-a_help="""Enables script to load hostnames from filenames in folder hosts in same directory, and applies the cmd provided in those files. (Dont use -m, -c with -a)
+a_help="""Enables script to load hostnames from filenames in folder hosts in same directory, and applies the cmd provided in those files.
+(Dont use -m, -c with -a)
 
 
 """
@@ -79,19 +87,41 @@ class pssh:
 	
 	def displayEnd(self):
 		print ('Script is exiting the ', self.hostname, '....!')
+	
+	def clear_rsakey(self):
+		os.system('ssh-keygen -R ' + self.hostname)
+		self.open_ssh()
 		
 	def open_ssh(self):
 		ssh_newkey = 'Are you sure you want to continue connecting (yes/no)?'
+		ssh_refused = 'port 22: Connection refused'
+		ssh_unresolved = 'Could not resolve hostname'
+		ssh_noroute = 'No route to host'
+		ssh_hostkeyfailed = 'Host key verification failed'
 		session = 'ssh ' + self.username + '@' + self.hostname
 		self.ssh = pexpect.spawnu(session)
 		self.displayStart()
 		time.sleep(1)
 		ret = self.ssh.expect([pexpect.EOF, ssh_newkey, '[P|p]assword:'],timeout=120)
-	
+		ssh_return = self.ssh.before
+		
 		if ret == 0:
-			print ('Error Connecting to', self.hostname, ', May be host is not resolvable or not responding')
-			return 0
-	
+			if (ssh_return.find(ssh_refused)) != -1:
+				print ('Error Connecting to', self.hostname, ', Port 22 is blocked or SSH is not enabled !!')
+				return 0
+			elif(ssh_return.find(ssh_unresolved)) != -1:
+				print ('Error Connecting to', self.hostname, ', Host is not resolvable, try to use IP instead of names !!')
+				return 0
+			elif(ssh_return.find(ssh_noroute)) != -1:
+				print ('Error Connecting to', self.hostname, ', No route to host')
+				return 0
+			elif(ssh_return.find(ssh_hostkeyfailed)) != -1:
+				print ('Error Connecting to', self.hostname, ', RSA Key Failed, reinitializing the key.')
+				self.clear_rsakey()
+			else:
+				print ('Error Connecting to', self.hostname, ', Host is not responding, or other Issue (May require: Manual debugs to verify the issue) !!')
+				return 0
+
 		if ret == 1:
 			self.ssh.sendline('yes')
 			ret_key = self.ssh.expect([pexpect.TIMEOUT, '[P|p]assword:'])
@@ -179,6 +209,17 @@ def find_config(object):
 	else:
 		print('Script could not open SSH session to host: ', object.hostname)
 
+def run_ifanalysis(iftext):
+	print ('Analyzing logs files for desired keyword....!')
+	for i in os.listdir('logs/'):
+		outf = open('analysis/' + i, 'w')
+		parse = CiscoConfParse('logs/'+ i)
+		for obj in parse.find_objects(iftext):
+			for i in obj.geneology_text:
+				outf.write((i +'\n'))
+		outf.close()
+	print ('Analyzing Done....!')
+
 def wait_for_prompt_log(ssh, prompt,logf, timeout=1):
 	gotprompt = 0
 	while not gotprompt:
@@ -202,37 +243,45 @@ def main():
 	parser.add_argument('-p', dest='max_parallel', default=10, type=int, help=p_help)
 	parser.add_argument('-f', dest='flag_find', default=False, action='store_true', help=f_help)
 	parser.add_argument('-child', dest='child', default='none', help=child_help)
+	parser.add_argument('-if', dest='if_analysis', default='none', help=if_help)
+	parser.add_argument('-offline', dest='offline', default=False, action='store_true' , help=offline_help)
 	parser.add_argument("-a", dest="adv", default=False, action='store_true', help=a_help)
 
 	args = parser.parse_args()
-	args.password = getpass.getpass('Enter Password: ')
 
-	if args.adv is False:
-		if type(args.hostname) is str:
-			session_basic = pssh(args.hostname,args.username,args.password,args.cmd,args.child)
-			if args.flag_find is True:
-				find_config(session_basic)
+	if args.offline is False:
+		args.password = getpass.getpass('Enter Password: ')
+		
+		if args.adv is False:
+			if type(args.hostname) is str:
+				session_basic = pssh(args.hostname,args.username,args.password,args.cmd,args.child)
+				if args.flag_find is True:
+					find_config(session_basic)
+				else:
+					run_cmd(session_basic)
+				
 			else:
-				run_cmd(session_basic)
-			
+				session = list()
+				for i in args.hostname:
+					session.append(pssh(i,args.username, args.password,args.cmd,args.child))
+				with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
+					if args.flag_find is True:
+						executor.map(find_config, session)
+					else:
+						executor.map(run_cmd, session)
+		
 		else:
 			session = list()
-			for i in args.hostname:
+			args.cmd= 'advance'
+			for i in os.listdir('hosts/'):
 				session.append(pssh(i,args.username, args.password,args.cmd,args.child))
+			
 			with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
-				if args.flag_find is True:
-					executor.map(find_config, session)
-				else:
-					executor.map(run_cmd, session)
+				executor.map(run_cmd, session)
 	
-	else:
-		session = list()
-		args.cmd= 'advance'
-		for i in os.listdir('hosts/'):
-			session.append(pssh(i,args.username, args.password,args.cmd,args.child))
+	if args.if_analysis != 'none':
+		run_ifanalysis(args.if_analysis)
 		
-		with concurrent.futures.ProcessPoolExecutor(max_workers=args.max_parallel) as executor:
-			executor.map(run_cmd, session)
 
 ##Functions end here, start of main code#####
 ##
