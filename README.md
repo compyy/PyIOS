@@ -2,7 +2,7 @@ PyIOS
 =====
 A Python script to do ssh to multiple Cisco Hosts and perform multiple operations with multiprocessing capablities, means you can do multiple tasks on multiple routers at same time.
 
-This Script must be run on Linux with SSH client installed.
+This Script should run on Linux with SSH client installed.
 
 It is using Python 3.4.1 code with Pexpect 4.0 library.
 
